@@ -17,6 +17,7 @@ def show_dashboard():
     connectivity_incidents = 0
     warning_incidents = 0
     critical_incidents = 0
+    recent_incidents = []
 
     with log_file.open("r", encoding="utf-8") as file:
         for line in file:
@@ -25,6 +26,7 @@ def show_dashboard():
 
             incident = json.loads(line)
             total += 1
+            recent_incidents.append(incident)
 
             if incident.get("resource") == "CPU":
                 cpu_incidents += 1
@@ -46,6 +48,16 @@ def show_dashboard():
     print("Warnings:", warning_incidents)
     print("Critical:", critical_incidents)
     print("========================================")
+
+    print("\n========== RECENT INCIDENTS ==========")
+
+    for incident in recent_incidents[-3:][::-1]:
+        print("Time:", incident.get("timestamp", "Unknown"))
+        print("Server:", incident.get("hostname", "Unknown"))
+        print("Severity:", incident.get("severity", "Unknown"))
+        print("Type:", incident.get("incident_type", incident.get("resource", "Unknown")))
+        print("--------------------------------------")
+
 
 
 if __name__ == "__main__":
