@@ -1,0 +1,26 @@
+
+{
+  "servers": [
+    {
+      "name": "Windows-Server-01",
+      "host": "127.0.0.1",
+      "type": "windows",
+      "environment": "development",
+      "enabled": true
+    },
+    {
+      "name": "Linux-Server-01",
+      "host": "192.0.2.10",
+      "type": "linux",
+      "environment": "development",
+      "enabled": false
+    },
+    {
+      "name": "Linux-Server-02",
+      "host": "192.0.2.11",
+      "type": "linux",
+      "environment": "development",
+      "enabled": false
+    }
+  ]
+}
