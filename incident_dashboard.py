@@ -15,6 +15,8 @@ def show_dashboard():
     total = 0
     cpu_incidents = 0
     connectivity_incidents = 0
+    warning_incidents = 0
+    critical_incidents = 0
 
     with log_file.open("r", encoding="utf-8") as file:
         for line in file:
@@ -30,9 +32,19 @@ def show_dashboard():
             if incident.get("incident_type") == "CONNECTIVITY_FAILURE":
                 connectivity_incidents += 1
 
+            if incident.get("severity") == "WARNING":
+                warning_incidents += 1
+
+            if incident.get("severity") == "CRITICAL":
+                critical_incidents += 1
+
     print("Total incidents:", total)
     print("CPU incidents:", cpu_incidents)
     print("Connectivity incidents:", connectivity_incidents)
+
+    print("\n========== SEVERITY SUMMARY ==========")
+    print("Warnings:", warning_incidents)
+    print("Critical:", critical_incidents)
     print("========================================")
 
 
