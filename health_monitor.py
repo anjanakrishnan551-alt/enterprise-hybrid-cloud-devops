@@ -4,6 +4,7 @@ import socket
 import psutil
 from datetime import datetime
 from pathlib import Path
+from incident_logger import log_incident
 
 
 # Reusable function to detect high resource usage
@@ -45,6 +46,18 @@ def main():
     cpu_status = check_incident("CPU", cpu_usage)
     memory_status = check_incident("Memory", memory_usage)
     disk_status = check_incident("Disk", disk_usage)
+
+
+    # Record incidents only when thresholds are exceeded
+    if cpu_usage >= 80:
+        log_incident(hostname, "CPU", cpu_usage)
+
+    if memory_usage >= 80:
+        log_incident(hostname, "Memory", memory_usage)
+
+    if disk_usage >= 80:
+        log_incident(hostname, "Disk", disk_usage)
+
 
     print("\n========== HEALTH STATUS ==========")
     print(cpu_status)
