@@ -53,6 +53,31 @@ def load_alert_history():
         alert_key = (hostname, incident_type, severity)
         last_alert_times[alert_key] = timestamp
 
+def show_alert_statistics():
+    """Display statistics from saved alert history."""
+
+    if not ALERT_HISTORY_FILE.exists():
+        print("No alert history found.")
+        return
+
+    with ALERT_HISTORY_FILE.open("r", encoding="utf-8") as file:
+        history = json.load(file)
+
+    total_alerts = len(history)
+
+    servers = set()
+
+    for key in history:
+        hostname = key.split("|", 1)[0]
+        servers.add(hostname)
+
+    print("========== ALERT STATISTICS ==========")
+    print("Total unique alert keys:", total_alerts)
+    print("Servers with alerts:", len(servers))
+    print("Cooldown period:", ALERT_COOLDOWN, "seconds")
+    print("======================================")
+
+
 
 def send_alert(incident):
     """Display an alert unless it is within its cooldown."""

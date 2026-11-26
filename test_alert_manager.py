@@ -4,12 +4,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, call
 
+
 from alert_manager import (
     send_alert,
     last_alert_times,
-    ALERT_COOLDOWN
+    ALERT_COOLDOWN,
+    show_alert_statistics
 )
-
 
 class TestAlertManager(unittest.TestCase):
 
@@ -115,6 +116,29 @@ class TestAlertManager(unittest.TestCase):
         mock_print.assert_any_call(
             "Duplicate alert suppressed:", "TEST-SERVER", "CPU"
         )
+
+    def test_alert_statistics(self):
+        # Create sample alert history
+        history = {
+            "SERVER-01|CPU|WARNING": 1000,
+            "SERVER-01|MEMORY|WARNING": 1100,
+            "SERVER-02|CPU|CRITICAL": 1200
+        }
+
+        import json
+
+        self.history_file.write_text(
+            json.dumps(history),
+            encoding="utf-8"
+        )
+
+        with patch("builtins.print") as mock_print:
+            show_alert_statistics()
+
+        mock_print.assert_any_call("Total unique alert keys:", 3)
+        mock_print.assert_any_call("Servers with alerts:", 2)
+        mock_print.assert_any_call("Cooldown period:", 300, "seconds")
+
 
 
 if __name__ == "__main__":
