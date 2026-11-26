@@ -63,5 +63,27 @@ class TestIncidentLogger(unittest.TestCase):
                 "WARNING"
             )
 
+    def test_cpu_incident_triggers_alert(self):
+        from incident_logger import log_incident
+        from unittest.mock import patch
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch("incident_logger.Path") as mock_path:
+                mock_path.return_value = Path(temp_dir)
+
+                with patch("incident_logger.send_alert") as mock_alert:
+                    log_incident("TEST-SERVER", "CPU", 95)
+
+            mock_alert.assert_called_once()
+
+            incident = mock_alert.call_args.args[0]
+
+            self.assertEqual(incident["hostname"], "TEST-SERVER")
+            self.assertEqual(incident["resource"], "CPU")
+            self.assertEqual(incident["usage_percent"], 95)
+            self.assertEqual(incident["severity"], "WARNING")
+
 if __name__ == "__main__":
     unittest.main()

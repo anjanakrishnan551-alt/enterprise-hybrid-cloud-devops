@@ -28,6 +28,7 @@ def log_incident(hostname, resource, usage):
         file.write(json.dumps(incident) + "\n")
 
     print("Incident recorded:", resource, usage, "%")
+    send_alert(incident)
 
 # Record network connectivity failures
 def log_connectivity_failure(hostname, host):
