@@ -1,6 +1,8 @@
 
+import tempfile
 import unittest
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import patch, call
 
 from alert_manager import (
     send_alert,
@@ -12,8 +14,23 @@ from alert_manager import (
 class TestAlertManager(unittest.TestCase):
 
     def setUp(self):
-        # Clear previous alerts before each test
+        # Create a separate history file for each test
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+
+        self.history_file = (
+            Path(self.temp_dir.name) / "alert_history.json"
+        )
+
+        self.history_patch = patch(
+            "alert_manager.ALERT_HISTORY_FILE",
+            self.history_file
+        )
+        self.history_patch.start()
+        self.addCleanup(self.history_patch.stop)
+
         last_alert_times.clear()
+        self.addCleanup(last_alert_times.clear)
 
     def test_first_alert_is_displayed(self):
         incident = {
@@ -30,6 +47,7 @@ class TestAlertManager(unittest.TestCase):
             "========== INFRASTRUCTURE ALERT =========="
         )
         mock_print.assert_any_call("Priority: MEDIUM")
+        self.assertTrue(self.history_file.exists())
 
     def test_duplicate_alert_is_suppressed(self):
         incident = {
@@ -49,9 +67,7 @@ class TestAlertManager(unittest.TestCase):
 
         self.assertEqual(
             mock_print.call_args_list.count(
-                unittest.mock.call(
-                    "========== INFRASTRUCTURE ALERT =========="
-                )
+                call("========== INFRASTRUCTURE ALERT ==========")
             ),
             1
         )
@@ -73,11 +89,31 @@ class TestAlertManager(unittest.TestCase):
 
         self.assertEqual(
             mock_print.call_args_list.count(
-                unittest.mock.call(
-                    "========== INFRASTRUCTURE ALERT =========="
-                )
+                call("========== INFRASTRUCTURE ALERT ==========")
             ),
             2
+        )
+
+    def test_history_survives_restart(self):
+        incident = {
+            "hostname": "TEST-SERVER",
+            "resource": "CPU",
+            "severity": "WARNING"
+        }
+
+        with patch("alert_manager.time.time", return_value=1000):
+            with patch("builtins.print"):
+                send_alert(incident)
+
+        # Simulate restarting Python by clearing memory
+        last_alert_times.clear()
+
+        with patch("alert_manager.time.time", return_value=1100):
+            with patch("builtins.print") as mock_print:
+                send_alert(incident)
+
+        mock_print.assert_any_call(
+            "Duplicate alert suppressed:", "TEST-SERVER", "CPU"
         )
 
 

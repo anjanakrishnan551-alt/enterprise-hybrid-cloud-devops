@@ -1,37 +1,89 @@
 
+import json
 import time
+from pathlib import Path
 
-# Remember when each alert was last displayed
-last_alert_times = {}
 
-# Five-minute cooldown (300 seconds)
+# Five-minute alert cooldown
 ALERT_COOLDOWN = 300
 
+# Remember alert timestamps in memory
+last_alert_times = {}
+
+# Location of the persistent history file
+ALERT_HISTORY_FILE = (
+    Path(__file__).resolve().parent
+    / "reports"
+    / "alert_history.json"
+)
+
+
+def save_alert_history():
+    """Save alert timestamps to a JSON file."""
+
+    ALERT_HISTORY_FILE.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    history = {}
+
+    for alert_key, timestamp in last_alert_times.items():
+        hostname, incident_type, severity = alert_key
+
+        key = f"{hostname}|{incident_type}|{severity}"
+        history[key] = timestamp
+
+    with ALERT_HISTORY_FILE.open("w", encoding="utf-8") as file:
+        json.dump(history, file, indent=4)
+
+
+def load_alert_history():
+    """Restore previously saved alert timestamps."""
+
+    if not ALERT_HISTORY_FILE.exists():
+        return
+
+    with ALERT_HISTORY_FILE.open("r", encoding="utf-8") as file:
+        history = json.load(file)
+
+    for key, timestamp in history.items():
+        hostname, incident_type, severity = key.split("|", 2)
+
+        alert_key = (hostname, incident_type, severity)
+        last_alert_times[alert_key] = timestamp
+
+
 def send_alert(incident):
+    """Display an alert unless it is within its cooldown."""
+
     hostname = incident.get("hostname", "Unknown")
     severity = incident.get("severity", "UNKNOWN")
+
     incident_type = incident.get(
         "incident_type",
         incident.get("resource", "Unknown")
     )
 
-    # Create a unique key for this alert
     alert_key = (hostname, incident_type, severity)
 
-    current_time = time.time()
+    # Load previously saved alerts
+    load_alert_history()
 
-    # Check whether the same alert was recently displayed
+    current_time = time.time()
     previous_time = last_alert_times.get(alert_key)
 
+    # Suppress duplicate alerts within five minutes
     if previous_time is not None:
         if current_time - previous_time < ALERT_COOLDOWN:
-            print("Duplicate alert suppressed:", hostname, incident_type)
+            print(
+                "Duplicate alert suppressed:",
+                hostname,
+                incident_type
+            )
             return
 
-    # Record the time of this alert
-    last_alert_times[alert_key] = current_time
-
-
+    # Display the alert
     print("========== INFRASTRUCTURE ALERT ==========")
     print("Server:", hostname)
     print("Severity:", severity)
@@ -50,6 +102,10 @@ def send_alert(incident):
         print("Action: Review incident details")
 
     print("==========================================")
+
+    # Remember and save this alert
+    last_alert_times[alert_key] = current_time
+    save_alert_history()
 
 
 if __name__ == "__main__":
