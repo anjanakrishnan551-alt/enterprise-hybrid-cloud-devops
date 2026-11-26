@@ -30,5 +30,38 @@ class TestIncidentLogger(unittest.TestCase):
                 self.assertEqual(incident["severity"], "WARNING")
 
 
+    def test_connectivity_failure_triggers_alert(self):
+        from incident_logger import log_connectivity_failure
+        from unittest.mock import patch
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch("incident_logger.Path") as mock_path:
+                mock_path.return_value = Path(temp_dir)
+
+                with patch("incident_logger.send_alert") as mock_alert:
+                    log_connectivity_failure(
+                        "TEST-ALERT-SERVER",
+                        "192.0.2.10"
+                    )
+
+            mock_alert.assert_called_once()
+
+            incident = mock_alert.call_args.args[0]
+
+            self.assertEqual(
+                incident["hostname"],
+                "TEST-ALERT-SERVER"
+            )
+            self.assertEqual(
+                incident["incident_type"],
+                "CONNECTIVITY_FAILURE"
+            )
+            self.assertEqual(
+                incident["severity"],
+                "WARNING"
+            )
+
 if __name__ == "__main__":
     unittest.main()

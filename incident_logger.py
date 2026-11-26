@@ -2,6 +2,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
+from alert_manager import send_alert
 
 
 def log_incident(hostname, resource, usage):
@@ -48,4 +49,5 @@ def log_connectivity_failure(hostname, host):
         file.write(json.dumps(incident) + "\n")
 
     print("Connectivity incident recorded:", hostname)
+    send_alert(incident)
 
