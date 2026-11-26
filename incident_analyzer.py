@@ -3,6 +3,33 @@ import json
 from pathlib import Path
 
 
+def get_incident_analysis(incident):
+    incident_type = incident.get("incident_type", "")
+    resource = incident.get("resource", "")
+
+    if incident_type == "CONNECTIVITY_FAILURE":
+        problem = "Network connectivity failure"
+        recommended_action = "Check server, network and firewall"
+
+    elif resource == "CPU":
+        problem = "High CPU usage"
+        recommended_action = "Investigate CPU-intensive processes"
+
+    else:
+        problem = "Unknown incident type"
+        recommended_action = "Review incident details"
+
+    result = {
+        "hostname": incident.get("hostname", "Unknown"),
+        "problem": problem,
+        "severity": incident.get("severity", "UNKNOWN"),
+        "recommended_action": recommended_action
+    }
+
+    return result
+
+
+
 def analyze_incident(incident):
     incident_type = incident.get("incident_type", "")
 

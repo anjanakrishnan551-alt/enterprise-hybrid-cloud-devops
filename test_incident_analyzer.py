@@ -2,8 +2,7 @@
 import unittest
 from unittest.mock import patch
 
-from incident_analyzer import analyze_incident
-
+from incident_analyzer import analyze_incident, get_incident_analysis
 
 class TestIncidentAnalyzer(unittest.TestCase):
 
@@ -48,6 +47,41 @@ class TestIncidentAnalyzer(unittest.TestCase):
         mock_print.assert_any_call("Problem: Unknown incident type")
         mock_print.assert_any_call(
             "Recommended check: Review incident details"
+        )
+
+    def test_structured_cpu_analysis(self):
+        incident = {
+            "hostname": "TEST-SERVER",
+            "resource": "CPU",
+            "severity": "WARNING"
+        }
+
+        result = get_incident_analysis(incident)
+
+        self.assertEqual(result["hostname"], "TEST-SERVER")
+        self.assertEqual(result["problem"], "High CPU usage")
+        self.assertEqual(result["severity"], "WARNING")
+        self.assertEqual(
+            result["recommended_action"],
+            "Investigate CPU-intensive processes"
+        )
+
+    def test_structured_connectivity_analysis(self):
+        incident = {
+            "hostname": "TEST-LINUX-SERVER",
+            "incident_type": "CONNECTIVITY_FAILURE",
+            "severity": "WARNING"
+        }
+
+        result = get_incident_analysis(incident)
+
+        self.assertEqual(
+            result["problem"],
+            "Network connectivity failure"
+        )
+        self.assertEqual(
+            result["recommended_action"],
+            "Check server, network and firewall"
         )
 
 
